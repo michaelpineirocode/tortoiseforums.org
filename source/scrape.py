@@ -43,18 +43,21 @@ def subTopic(block, path):
         info = str(count) + " " + title# + " " + meta
         sublink = c.find("a")["href"]
         lastpath = currentpath #stores what the last path will be before a change
-        currentpath = currentpath + "/" + info
-        os.mkdir(currentpath)
-        selectForum(sublink)
+        currentpath = currentpath + "/" + info #stores the new current path
+        os.mkdir(currentpath) #makes the path
+        selectForum(sublink) #calls a function which will copy all of the forums
         currentpath = lastpath #sets the path back for the next iteration
         
 def selectForum(topiclink):
     req = requests.get(link + topiclink) #gets the content from the forum page
-    print(topiclink)
     soup = BeautifulSoup(req.text, "html.parser")
-    page = soup.find(class_="p-body").find(class_="p-body-inner").find(class_="block").find(class_="block-outer")
-    
-    #print(next_button)
+    try:
+        page = soup.find(class_="p-body").find(class_="p-body-inner").find(class_="block").find(class_="block-outer")
+        post = page.find_all(class_="structItem-cell structItem-cell--main")
+        print(post)
+    except AttributeError as a: #not all forums have just one "block"
+        page = soup.find(class_="p-body").find(class_="p-body-inner").find_all(class_="block")[1].find(class_="block-outer")
+        print(page)
 
 def copyForum():
     pass
