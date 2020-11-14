@@ -53,11 +53,11 @@ def selectForum(topiclink):
     soup = BeautifulSoup(req.text, "html.parser")
     try:
         page = soup.find(class_="p-body").find(class_="p-body-inner").find(class_="block").find(class_="block-outer")
-        post = page.find_all(class_="structItem-cell structItem-cell--main")
+        post = page.find_all(class_="structItemContainer-group js-threadList").findChildren()
         print(post)
     except AttributeError as a: #not all forums have just one "block"
         page = soup.find(class_="p-body").find(class_="p-body-inner").find_all(class_="block")[1].find(class_="block-outer")
-        print(page)
+        
 
 def copyForum():
     pass
