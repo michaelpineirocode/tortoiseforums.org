@@ -18,7 +18,7 @@ block = soup.find_all(class_="block-container") #gets all the major blocks
 currentpath = root
 lastpath = None
 
-def topic():
+def topic(): #picks each topic
     global currentpath
     count = 0
     for b in block:
@@ -27,11 +27,11 @@ def topic():
             header = str(count) + " " + b.find(class_="block-header--left").get_text().replace("!", "")[1:-1]
             lastpath = currentpath
             currentpath = root + "/" + header
-            os.mkdir(currentpath)
-            subTopic(b, currentpath)
+            os.mkdir(currentpath) #creates path
+            subTopic(b, currentpath) #for each topic, goes to subtopic
             currentpath = lastpath
 
-def subTopic(block, path):
+def subTopic(block, path): #picks a subtopic
     global currentpath
     global lastpath
     content = block.find_all(class_="node-body")
@@ -45,21 +45,21 @@ def subTopic(block, path):
         lastpath = currentpath #stores what the last path will be before a change
         currentpath = currentpath + "/" + info #stores the new current path
         os.mkdir(currentpath) #makes the path
-        selectForum(sublink) #calls a function which will copy all of the forums
+        selectForum(sublink) #calls a function which will select the forums to copy
         currentpath = lastpath #sets the path back for the next iteration
         
-def selectForum(topiclink):
+def selectForum(topiclink): #selects the forums
+    page_number = 1
     req = requests.get(link + topiclink) #gets the content from the forum page
     soup = BeautifulSoup(req.text, "html.parser")
-    try:
-        page = soup.find(class_="p-body").find(class_="p-body-inner").find(class_="block").find(class_="block-outer")
-        post = page.find_all(class_="structItemContainer-group js-threadList").findChildren()
-        print(post)
-    except AttributeError as a: #not all forums have just one "block"
-        page = soup.find(class_="p-body").find(class_="p-body-inner").find_all(class_="block")[1].find(class_="block-outer")
-        
+    block = soup.find(class_="p-body").find(class_="p-body-inner").find_all(class_="block")
+    if len(block) == 2: 
+        block.pop(0)
+    
+    nextButton = block[0].find("a")["href"]
+    print(topiclink, nextButton)    
 
-def copyForum():
+def copyForum(): #copies the forums
     pass
 
 topic()
