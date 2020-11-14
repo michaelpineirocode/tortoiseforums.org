@@ -39,7 +39,7 @@ def subTopic(block, path): #picks a subtopic
     for c in content:
         count += 1
         title = c.find(class_="node-title").get_text().replace("\n", "").replace("?", "")
-        meta = c.find(class_="node-meta").get_text().replace("\n\n\n", " ").replace("\n", "-").replace("'", "").replace("/", "")
+        #meta = c.find(class_="node-meta").get_text().replace("\n\n\n", " ").replace("\n", "-").replace("'", "").replace("/", "")
         info = str(count) + " " + title# + " " + meta
         sublink = c.find("a")["href"]
         lastpath = currentpath #stores what the last path will be before a change
@@ -48,18 +48,40 @@ def subTopic(block, path): #picks a subtopic
         selectForum(sublink) #calls a function which will select the forums to copy
         currentpath = lastpath #sets the path back for the next iteration
         
+last_title=""
+page_number = 0
 def selectForum(topiclink): #selects the forums
-    page_number = 1
+    global last_title #keeps track of the last title
+    global page_number #keeps track of the page number
+    extension = "/page-" + str(page_number)
+    next_page = topiclink + extension
+    
     req = requests.get(link + topiclink) #gets the content from the forum page
     soup = BeautifulSoup(req.text, "html.parser")
-    block = soup.find(class_="p-body").find(class_="p-body-inner").find_all(class_="block")
-    if len(block) == 2: 
-        block.pop(0)
+    current_title = soup.find("title").get_text()
     
-    nextButton = block[0].find("a")["href"]
-    print(topiclink, nextButton)    
+    if current_title != last_title:
+        block = soup.find(class_="p-body").find(class_="p-body-inner").find_all(class_="block")
+        if len(block) == 2: 
+            block.pop(0)
+        
+        posts = block[0].find_all(class_="structItem-cell structItem-cell--main")
+        for p in posts:
+            title = p.find(class_="structItem-title").find("a").get_text() #gets the title of each post
+            author = p.find(class_="structItem-minor").find("li").find("a").get_text()
+            linkex = p.find(class_="structItem-title").find("a")["href"]
+            copyForum(title, author, linkex)
+        
+        page_number += 1
+        print(link, " ", page_number)
+        selectForum(next_page)
+        return
+    
+    else:   
+        return 
 
-def copyForum(): #copies the forums
-    pass
+def copyForum(title, author, linkex): #copies the forums
+    link = "https://www.tortoiseforum.org/threads/" + linkex
+    
 
 topic()
