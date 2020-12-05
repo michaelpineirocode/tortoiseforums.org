@@ -47,7 +47,6 @@ def createForum(link, path, title):
     block = content.find(class_="block-body js-replyNewMessageContainer")
     #print(link)
     post = block.find_all("article")
-    print(link)
     
     f = open(path + "/" + title + ".txt", "w")
     f.write(title + "\n\n")
@@ -69,7 +68,7 @@ def formatTitle(title):
     title = list(title)
     count = 0
     while count < len(title):
-        if title[count] not in string.ascii_letters + string.digits:
+        if title[count] not in string.ascii_letters + string.digits + " ":
             title.pop(count)
             continue
         else:
@@ -128,12 +127,21 @@ for z in range(len(directory.list_subs())):
                 #only has the big titles
         else:
             content = BeautifulSoup(requests.get(link).text, "html.parser")
-            posts = content.find_all(class_="structItem-title")
-            for t in posts:
-                title = t.get_text()
-                title = formatTitle(title)
-                forum_link = website.url + t.find("a")["href"][1:]
-                path = directory.list_subs()[z].list_subs()[i].root #this is the curent path
-                createForum(forum_link, path, title)
-        
+            bar = content.find(class_="pageNav-main").find_all('a')
+            last_page = int(bar[-1].get_text())
+            del bar
+            for page in range(1, last_page + 1):
+                newlink = link + "page-" +str(page)
+                print(newlink)
+                content = BeautifulSoup(requests.get(newlink).text, "html.parser")
+                posts = content.find_all(class_="structItem-title")
+
+                for t in range(len(posts)):
+                    title = posts[t].get_text()
+                    title = formatTitle("P" + str(page) + "N" + str(t) + " " + title)
+                    forum_link = website.url + posts[t].find("a")["href"][1:]
+                    print("        " + forum_link)
+                    path = directory.list_subs()[z].list_subs()[i].root #this is the current path
+                    createForum(forum_link, path, title)
+            
 
