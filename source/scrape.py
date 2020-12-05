@@ -2,6 +2,7 @@ import requests
 import uuid
 from bs4 import BeautifulSoup
 import os
+import string
 
 class Website:
     def __init__(self, url, name):
@@ -41,6 +42,53 @@ def checkForum(link):
     else:
         return False
 
+def createForum(link, path, title):
+    content = BeautifulSoup(requests.get(link).text, "html.parser")
+    block = content.find(class_="block-body js-replyNewMessageContainer")
+    #print(link)
+    post = block.find_all("article")
+    print(link)
+    
+    f = open(path + "/" + title + ".txt", "w")
+    f.write(title + "\n\n")
+    for p in post:
+        if p.find(class_="u-anchorTarget") == None:
+            continue
+        header = p.find(class_="message-header").get_text()
+        f.write(formatPosts(header) + "\n")
+        user = p.find(class_="message-cell message-cell--user")
+        user_name = user.find(class_="message-name").get_text()
+        user_title = user.find(class_="userTitle message-userTitle").get_text()
+        f.write(formatPosts(user_name) + " | " + formatPosts(user_title) + "\n")
+        message = p.find(class_="message-cell message-cell--main").find(class_="bbWrapper").get_text()
+        f.write(formatPosts(message) + "\n\n")
+
+    f.close()
+
+def formatTitle(title):
+    title = list(title)
+    count = 0
+    while count < len(title):
+        if title[count] not in string.ascii_letters + string.digits:
+            title.pop(count)
+            continue
+        else:
+            count += 1
+    title = "".join(title)
+    return title
+
+def formatPosts(content):
+    content = list(content)
+    count = 0
+    while count < len(content):
+        if content[count] not in string.printable:
+            content.pop(count)
+            continue
+        else:
+            count += 1
+    content = "".join(content)
+    return content.replace("\n", "")
+
 website = Website("https://www.tortoiseforum.org/", "Tortoise Forum")
 directory = Directory("T:/" + website.name + " (" + str(uuid.uuid4())[:8] + ")", "root")
 
@@ -79,6 +127,13 @@ for z in range(len(directory.list_subs())):
                 pass
                 #only has the big titles
         else:
-            pass
-            #only has forums
+            content = BeautifulSoup(requests.get(link).text, "html.parser")
+            posts = content.find_all(class_="structItem-title")
+            for t in posts:
+                title = t.get_text()
+                title = formatTitle(title)
+                forum_link = website.url + t.find("a")["href"][1:]
+                path = directory.list_subs()[z].list_subs()[i].root #this is the curent path
+                createForum(forum_link, path, title)
         
+
