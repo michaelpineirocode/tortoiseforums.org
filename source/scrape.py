@@ -31,7 +31,15 @@ def checkLink(link):
         if b.find_all(class_="node-body") != []:
             return True
         else:
-            return False        
+            return False   
+
+def checkForum(link):
+    content = BeautifulSoup(requests.get(link).text, "html.parser")
+    struct = content.find(class_="structItemContainer")
+    if struct != None:
+        return True
+    else:
+        return False
 
 website = Website("https://www.tortoiseforum.org/", "Tortoise Forum")
 directory = Directory("T:/" + website.name + " (" + str(uuid.uuid4())[:8] + ")", "root")
@@ -63,10 +71,15 @@ for z in range(len(directory.list_subs())):
     topics = directory.list_subs()[z].list_subs()
     for i in range(len(topics)):
         link = website.url + topics[i].code[1:]
-        print(checkLink(link))
         if checkLink(link) == True:
-            pass
+            if checkForum(link) == True:
+                pass
+                #has big titles and forums
+            else:
+                pass
+                #only has the big titles
         else:
             pass
+            #only has forums
         
 
