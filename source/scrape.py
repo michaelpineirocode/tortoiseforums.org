@@ -1,87 +1,85 @@
 import requests
-from datetime import datetime
-import os
+import uuid
 from bs4 import BeautifulSoup
-import threading
+import os
 
-timestamp = datetime.now().strftime("%b-%d-%y ~ %H-%M-%S")
-link = "https://www.tortoiseforum.org/"
+class Website:
+    def __init__(self, url, name):
+        self.url = url
+        self.name = name
+        self.content = BeautifulSoup(requests.get(self.url).text, "html.parser")
 
-req = requests.get(link)
-soup = BeautifulSoup(req.text, "html.parser")
+class Directory:
+    def __init__(self, root, name, code=None):
+        self.root = root
+        self.subs = []
+        self.name = name #specific name for referencing
+        self.code = code #can assign the code if neccesary, but not neccessary
+        os.mkdir(self.root)
+    def add_subdirectory(self, name, code=None):
+        self.subdirectory = Directory(self.root + "/" + name, name, code=code)
+        self.subs.append(self.subdirectory)
 
-pageTitle = soup.find(class_="p-title-value").get_text() #gets the title of the page
-root = "T:/" + pageTitle + " " + timestamp #assigns a root path
-os.mkdir(root) #makes root directory
+    def list_subs(self):
+        return self.subs
 
-block = soup.find_all(class_="block-container") #gets all the major blocks
-currentpath = root
-lastpath = None
+def checkLink(link):
+    content = BeautifulSoup(requests.get(link).text, "html.parser")
+    blocks = content.find_all(class_="block-container")
+    
+    for b in blocks:
+        if b.find_all(class_="node-body") != []:
+            return True
+        else:
+            return False   
 
-def topic(): #picks each topic
-    global currentpath
-    count = 0
-    for b in block:
-        if b.find(class_="block-header--left") != None:
-            count += 1
-            header = str(count) + " " + b.find(class_="block-header--left").get_text().replace("!", "")[1:-1]
-            lastpath = currentpath
-            currentpath = root + "/" + header
-            os.mkdir(currentpath) #creates path
-            subTopic(b, currentpath) #for each topic, goes to subtopic
-            currentpath = lastpath
+def checkForum(link):
+    content = BeautifulSoup(requests.get(link).text, "html.parser")
+    struct = content.find(class_="structItemContainer")
+    if struct != None:
+        return True
+    else:
+        return False
 
-def subTopic(block, path): #picks a subtopic
-    global currentpath
-    global lastpath
-    content = block.find_all(class_="node-body")
-    count = 0
-    for c in content:
-        count += 1
-        title = c.find(class_="node-title").get_text().replace("\n", "").replace("?", "")
-        #meta = c.find(class_="node-meta").get_text().replace("\n\n\n", " ").replace("\n", "-").replace("'", "").replace("/", "")
-        info = str(count) + " " + title# + " " + meta
-        sublink = c.find("a")["href"]
-        lastpath = currentpath #stores what the last path will be before a change
-        currentpath = currentpath + "/" + info #stores the new current path
-        os.mkdir(currentpath) #makes the path
-        selectForum(sublink) #calls a function which will select the forums to copy
-        currentpath = lastpath #sets the path back for the next iteration
+website = Website("https://www.tortoiseforum.org/", "Tortoise Forum")
+directory = Directory("T:/" + website.name + " (" + str(uuid.uuid4())[:8] + ")", "root")
+
+print("Scraping " + website.name)
+blocks = website.content.find_all(class_="block-container")
+#creates topics
+for block in range(len(blocks)):
+    if blocks[block].find(class_="block-header--left") != None: #if there is a a block header
+        name = str(block) + " " + blocks[block].find(class_="block-header--left").get_text().replace("!", "")[1:-1]
+        directory.add_subdirectory(name, blocks[block]) #adds a subdirectory of the name, and the code at the block index
+del blocks #I don't know if this works, but I am trying to free up memory
+
+#creates topic subdirectory
+for z in range(len(directory.list_subs())):  
+    block = directory.list_subs()[z]
+    topic = block.code.find_all(class_="node-body") #find all the topic names from within the code
+    for t in range(len(topic)):
+        title = str(t + 1) + " " + topic[t].find(class_="node-title").get_text().replace("\n", "").replace("?", "")
+        link = topic[t].find("a")["href"]
+        block.add_subdirectory(title, link) #add a subdirectory to the subdirectory.
+'''
+    #An example of how a subdirectory can be referenced from a subdirectory and display the "root"(path)
+    for i in range(len(block.list_subs())):
+        print(block.list_subs()[i].root)
+'''
+#goes through each topic and determines whether it is a forum or another sub
+for z in range(len(directory.list_subs())):
+    topics = directory.list_subs()[z].list_subs()
+    for i in range(len(topics)):
+        link = website.url + topics[i].code[1:]
+        if checkLink(link) == True:
+            if checkForum(link) == True:
+                pass
+                #has big titles and forums
+            else:
+                pass
+                #only has the big titles
+        else:
+            pass
+            #only has forums
         
-last_title=""
-page_number = 0
-def selectForum(topiclink): #selects the forums
-    global last_title #keeps track of the last title
-    global page_number #keeps track of the page number
-    extension = "/page-" + str(page_number)
-    next_page = topiclink + extension
-    
-    req = requests.get(link + topiclink) #gets the content from the forum page
-    soup = BeautifulSoup(req.text, "html.parser")
-    current_title = soup.find("title").get_text()
-    
-    if current_title != last_title:
-        block = soup.find(class_="p-body").find(class_="p-body-inner").find_all(class_="block")
-        if len(block) == 2: 
-            block.pop(0)
-        
-        posts = block[0].find_all(class_="structItem-cell structItem-cell--main")
-        for p in posts:
-            title = p.find(class_="structItem-title").find("a").get_text() #gets the title of each post
-            author = p.find(class_="structItem-minor").find("li").find("a").get_text()
-            linkex = p.find(class_="structItem-title").find("a")["href"]
-            copyForum(title, author, linkex)
-        
-        page_number += 1
-        print(link, " ", page_number)
-        selectForum(next_page)
-        return
-    
-    else:   
-        return 
 
-def copyForum(title, author, linkex): #copies the forums
-    link = "https://www.tortoiseforum.org/threads/" + linkex
-    
-
-topic()
