@@ -3,6 +3,8 @@ import uuid
 from bs4 import BeautifulSoup
 import os
 import string
+import time
+import random
 
 class Website:
     def __init__(self, url, name):
@@ -43,53 +45,56 @@ def checkForum(link):
         return False
 
 def createForum(link, path, title):
-    content = BeautifulSoup(requests.get(link).text, "html.parser")
-    if content.find(class_="pageNav-main") != None:
-        bar = content.find(class_="pageNav-main").find_all('a')
-        last_page = int(bar[-1].get_text())
-        del bar
+    try:
+        content = BeautifulSoup(requests.get(link).text, "html.parser")
+        if content.find(class_="pageNav-main") != None:
+            bar = content.find(class_="pageNav-main").find_all('a')
+            last_page = int(bar[-1].get_text())
+            del bar
 
-        for page in range(1, last_page + 1):
-            newlink = link + "page-" + str(page)
-            print("                " + newlink)
-            content = BeautifulSoup(requests.get(newlink).text, "html.parser")
-            block = content.find(class_="block-body js-replyNewMessageContainer")
-            #print(link)
-            post = block.find_all("article")
-            
-            f = open(path + "/" + title + ".txt", "a")
-            f.write(title + "\n\n")
-            for p in post:
-                if p.find(class_="u-anchorTarget") == None:
-                    continue
-                header = p.find(class_="message-header").get_text()
-                f.write(formatPosts(header) + "\n")
-                user = p.find(class_="message-cell message-cell--user")
-                user_name = user.find(class_="message-name").get_text()
-                user_title = user.find(class_="userTitle message-userTitle").get_text()
-                f.write(formatPosts(user_name) + " | " + formatPosts(user_title) + "\n")
-                message = p.find(class_="message-cell message-cell--main").find(class_="bbWrapper").get_text()
-                f.write(formatPosts(message) + "\n\n")
-    else:
-            block = content.find(class_="block-body js-replyNewMessageContainer")
-            print("                " + link)
-            post = block.find_all("article")
-            
-            f = open(path + "/" + title + ".txt", "w")
-            f.write(title + "\n\n")
-            for p in post:
-                if p.find(class_="u-anchorTarget") == None:
-                    continue
-                header = p.find(class_="message-header").get_text()
-                f.write(formatPosts(header) + "\n")
-                user = p.find(class_="message-cell message-cell--user")
-                user_name = user.find(class_="message-name").get_text()
-                user_title = user.find(class_="userTitle message-userTitle").get_text()
-                f.write(formatPosts(user_name) + " | " + formatPosts(user_title) + "\n")
-                message = p.find(class_="message-cell message-cell--main").find(class_="bbWrapper").get_text()
-                f.write(formatPosts(message) + "\n\n")
+            for page in range(1, last_page + 1):
+                newlink = link + "page-" + str(page)
+                #print("                " + newlink)
+                content = BeautifulSoup(requests.get(newlink).text, "html.parser")
+                block = content.find(class_="block-body js-replyNewMessageContainer")
+                ##print(link)
+                post = block.find_all("article")
+                
+                f = open(path + "/" + title + ".txt", "a")
+                f.write(title + "\n\n")
+                for p in post:
+                    if p.find(class_="u-anchorTarget") == None:
+                        continue
+                    header = p.find(class_="message-header").get_text()
+                    f.write(formatPosts(header) + "\n")
+                    user = p.find(class_="message-cell message-cell--user")
+                    user_name = user.find(class_="message-name").get_text()
+                    user_title = user.find(class_="userTitle message-userTitle").get_text()
+                    f.write(formatPosts(user_name) + " | " + formatPosts(user_title) + "\n")
+                    message = p.find(class_="message-cell message-cell--main").find(class_="bbWrapper").get_text()
+                    f.write(formatPosts(message) + "\n\n")
+        else:
+                block = content.find(class_="block-body js-replyNewMessageContainer")
+                #print("                " + link)
+                post = block.find_all("article")
+                
+                f = open(path + "/" + title + ".txt", "w")
+                f.write(title + "\n\n")
+                for p in post:
+                    if p.find(class_="u-anchorTarget") == None:
+                        continue
+                    header = p.find(class_="message-header").get_text()
+                    f.write(formatPosts(header) + "\n")
+                    user = p.find(class_="message-cell message-cell--user")
+                    user_name = user.find(class_="message-name").get_text()
+                    user_title = user.find(class_="userTitle message-userTitle").get_text()
+                    f.write(formatPosts(user_name) + " | " + formatPosts(user_title) + "\n")
+                    message = p.find(class_="message-cell message-cell--main").find(class_="bbWrapper").get_text()
+                    f.write(formatPosts(message) + "\n\n")
 
-    f.close()
+        f.close()
+    except:
+        pass
 
 def formatTitle(title):
     title = list(title)
@@ -104,6 +109,7 @@ def formatTitle(title):
     return title
 
 def formatPosts(content):
+    
     content = list(content)
     count = 0
     while count < len(content):
@@ -116,28 +122,39 @@ def formatPosts(content):
     return content.replace("\n", "")
 
 def forum(z, i, path):
-            
-    content = BeautifulSoup(requests.get(link).text, "html.parser")
-    bar = content.find(class_="pageNav-main").find_all('a')
-    last_page = int(bar[-1].get_text())
-    del bar
-    for page in range(1, last_page + 1):
-        newlink = link + "page-" +str(page)
-        print(newlink)
-        content = BeautifulSoup(requests.get(newlink).text, "html.parser")
-        posts = content.find_all(class_="structItem-title")
+    try:
+        content = BeautifulSoup(requests.get(link).text, "html.parser")
+        bar = content.find(class_="pageNav-main").find_all('a')
+        last_page = int(bar[-1].get_text())
+        del bar
+        for page in range(1, last_page + 1):
+            newlink = link + "page-" +str(page)
+            #print(newlink)
+            content = BeautifulSoup(requests.get(newlink).text, "html.parser")
+            posts = content.find_all(class_="structItem-title")
+            for t in range(len(posts)):
+                time.sleep(0.4)
+                title = posts[t].get_text()
+                title = formatTitle("P" + str(page) + "N" + str(t) + " " + title)
+                forum_link = website.url + posts[t].find("a")["href"][1:]
+                #print("        " + forum_link)
+                createForum(forum_link, path, title)
+    except:
+        pass
 
-        for t in range(len(posts)):
-            title = posts[t].get_text()
-            title = formatTitle("P" + str(page) + "N" + str(t) + " " + title)
-            forum_link = website.url + posts[t].find("a")["href"][1:]
-            print("        " + forum_link)
-            createForum(forum_link, path, title)
+def randomTime():
+    rand = random.randint(100, 500) / 1000
+    start = time.time()
+    while True:
+        if time.time() - rand >= start:
+            break
+    return
+
 
 website = Website("https://www.tortoiseforum.org/", "Tortoise Forum")
 directory = Directory("T:/" + website.name + " (" + str(uuid.uuid4())[:8] + ")", "root")
 
-print("Scraping " + website.name)
+#print("Scraping " + website.name)
 
 blocks = website.content.find_all(class_="block-container")
 #creates topics
@@ -158,7 +175,7 @@ for z in range(len(directory.list_subs())):
 '''
     #An example of how a subdirectory can be referenced from a subdirectory and display the "root"(path)
     for i in range(len(block.list_subs())):
-        print(block.list_subs()[i].root)
+        #print(block.list_subs()[i].root)
 '''
 #goes through each topic and determines whether it is a forum or another sub
 for z in range(len(directory.list_subs())):
@@ -176,7 +193,7 @@ for z in range(len(directory.list_subs())):
                         link = website.url + n.find("a")["href"]
                         title = formatTitle(n.find(class_="node-title").get_text())
                         directory.list_subs()[z].list_subs()[i].add_subdirectory(title)
-                        print(title)
+                        ##print(title)
                         path = directory.list_subs()[z].list_subs()[i].list_subs()[-1].root
                         forum(z, i, path)
                 
@@ -193,7 +210,7 @@ for z in range(len(directory.list_subs())):
                         link = website.url + n.find("a")["href"]
                         title = formatTitle(n.find(class_="node-title").get_text())
                         directory.list_subs()[z].list_subs()[i].add_subdirectory(title)
-                        print(title)
+                        ##print(title)
                         path = directory.list_subs()[z].list_subs()[i].list_subs()[-1].root
                         forum(z, i, path)
         else:
