@@ -115,10 +115,30 @@ def formatPosts(content):
     content = "".join(content)
     return content.replace("\n", "")
 
+def forum(z, i, path):
+            
+    content = BeautifulSoup(requests.get(link).text, "html.parser")
+    bar = content.find(class_="pageNav-main").find_all('a')
+    last_page = int(bar[-1].get_text())
+    del bar
+    for page in range(1, last_page + 1):
+        newlink = link + "page-" +str(page)
+        print(newlink)
+        content = BeautifulSoup(requests.get(newlink).text, "html.parser")
+        posts = content.find_all(class_="structItem-title")
+
+        for t in range(len(posts)):
+            title = posts[t].get_text()
+            title = formatTitle("P" + str(page) + "N" + str(t) + " " + title)
+            forum_link = website.url + posts[t].find("a")["href"][1:]
+            print("        " + forum_link)
+            createForum(forum_link, path, title)
+
 website = Website("https://www.tortoiseforum.org/", "Tortoise Forum")
 directory = Directory("T:/" + website.name + " (" + str(uuid.uuid4())[:8] + ")", "root")
 
 print("Scraping " + website.name)
+
 blocks = website.content.find_all(class_="block-container")
 #creates topics
 for block in range(len(blocks)):
@@ -147,26 +167,37 @@ for z in range(len(directory.list_subs())):
         link = website.url + topics[i].code[1:]
         if checkLink(link) == True:
             if checkForum(link) == True:
-                pass
-                #has big titles and forums
+                content = BeautifulSoup(requests.get(link).text, "html.parser")
+                blocks = content.find_all(class_="block-container")
+    
+                for b in blocks:
+                    nodes = b.find_all(class_="node-body")
+                    for n in nodes:
+                        link = website.url + n.find("a")["href"]
+                        title = formatTitle(n.find(class_="node-title").get_text())
+                        directory.list_subs()[z].list_subs()[i].add_subdirectory(title)
+                        print(title)
+                        path = directory.list_subs()[z].list_subs()[i].list_subs()[-1].root
+                        forum(z, i, path)
+                
+                path = directory.list_subs()[z].list_subs()[i].root
+                forum(z, i, path)
+            
             else:
-                pass
-                #only has the big titles
+                content = BeautifulSoup(requests.get(link).text, "html.parser")
+                blocks = content.find_all(class_="block-container")
+    
+                for b in blocks:
+                    nodes = b.find_all(class_="node-body")
+                    for n in nodes:
+                        link = website.url + n.find("a")["href"]
+                        title = formatTitle(n.find(class_="node-title").get_text())
+                        directory.list_subs()[z].list_subs()[i].add_subdirectory(title)
+                        print(title)
+                        path = directory.list_subs()[z].list_subs()[i].list_subs()[-1].root
+                        forum(z, i, path)
         else:
-            content = BeautifulSoup(requests.get(link).text, "html.parser")
-            bar = content.find(class_="pageNav-main").find_all('a')
-            last_page = int(bar[-1].get_text())
-            del bar
-            for page in range(1, last_page + 1):
-                newlink = link + "page-" +str(page)
-                print(newlink)
-                content = BeautifulSoup(requests.get(newlink).text, "html.parser")
-                posts = content.find_all(class_="structItem-title")
-
-                for t in range(len(posts)):
-                    title = posts[t].get_text()
-                    title = formatTitle("P" + str(page) + "N" + str(t) + " " + title)
-                    forum_link = website.url + posts[t].find("a")["href"][1:]
-                    print("        " + forum_link)
-                    path = directory.list_subs()[z].list_subs()[i].root #this is the current path
-                    createForum(forum_link, path, title)
+            
+            path = directory.list_subs()[z].list_subs()[i].root
+            forum(z, i, path)
+            
