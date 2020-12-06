@@ -44,23 +44,50 @@ def checkForum(link):
 
 def createForum(link, path, title):
     content = BeautifulSoup(requests.get(link).text, "html.parser")
-    block = content.find(class_="block-body js-replyNewMessageContainer")
-    #print(link)
-    post = block.find_all("article")
-    
-    f = open(path + "/" + title + ".txt", "w")
-    f.write(title + "\n\n")
-    for p in post:
-        if p.find(class_="u-anchorTarget") == None:
-            continue
-        header = p.find(class_="message-header").get_text()
-        f.write(formatPosts(header) + "\n")
-        user = p.find(class_="message-cell message-cell--user")
-        user_name = user.find(class_="message-name").get_text()
-        user_title = user.find(class_="userTitle message-userTitle").get_text()
-        f.write(formatPosts(user_name) + " | " + formatPosts(user_title) + "\n")
-        message = p.find(class_="message-cell message-cell--main").find(class_="bbWrapper").get_text()
-        f.write(formatPosts(message) + "\n\n")
+    if content.find(class_="pageNav-main") != None:
+        bar = content.find(class_="pageNav-main").find_all('a')
+        last_page = int(bar[-1].get_text())
+        del bar
+
+        for page in range(1, last_page + 1):
+            newlink = link + "page-" + str(page)
+            print("                " + newlink)
+            content = BeautifulSoup(requests.get(newlink).text, "html.parser")
+            block = content.find(class_="block-body js-replyNewMessageContainer")
+            #print(link)
+            post = block.find_all("article")
+            
+            f = open(path + "/" + title + ".txt", "a")
+            f.write(title + "\n\n")
+            for p in post:
+                if p.find(class_="u-anchorTarget") == None:
+                    continue
+                header = p.find(class_="message-header").get_text()
+                f.write(formatPosts(header) + "\n")
+                user = p.find(class_="message-cell message-cell--user")
+                user_name = user.find(class_="message-name").get_text()
+                user_title = user.find(class_="userTitle message-userTitle").get_text()
+                f.write(formatPosts(user_name) + " | " + formatPosts(user_title) + "\n")
+                message = p.find(class_="message-cell message-cell--main").find(class_="bbWrapper").get_text()
+                f.write(formatPosts(message) + "\n\n")
+    else:
+            block = content.find(class_="block-body js-replyNewMessageContainer")
+            print("                " + link)
+            post = block.find_all("article")
+            
+            f = open(path + "/" + title + ".txt", "w")
+            f.write(title + "\n\n")
+            for p in post:
+                if p.find(class_="u-anchorTarget") == None:
+                    continue
+                header = p.find(class_="message-header").get_text()
+                f.write(formatPosts(header) + "\n")
+                user = p.find(class_="message-cell message-cell--user")
+                user_name = user.find(class_="message-name").get_text()
+                user_title = user.find(class_="userTitle message-userTitle").get_text()
+                f.write(formatPosts(user_name) + " | " + formatPosts(user_title) + "\n")
+                message = p.find(class_="message-cell message-cell--main").find(class_="bbWrapper").get_text()
+                f.write(formatPosts(message) + "\n\n")
 
     f.close()
 
@@ -143,5 +170,3 @@ for z in range(len(directory.list_subs())):
                     print("        " + forum_link)
                     path = directory.list_subs()[z].list_subs()[i].root #this is the current path
                     createForum(forum_link, path, title)
-            
-
