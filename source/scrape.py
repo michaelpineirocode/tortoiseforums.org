@@ -138,6 +138,7 @@ def forum(z, i, path):
                 title = formatTitle("P" + str(page) + "N" + str(t) + " " + title)
                 forum_link = website.url + posts[t].find("a")["href"][1:]
                 #print("        " + forum_link)
+                path = path.add_subdirectory(title)
                 createForum(forum_link, path, title)
     except:
         pass
@@ -194,10 +195,10 @@ for z in range(len(directory.list_subs())):
                         title = formatTitle(n.find(class_="node-title").get_text())
                         directory.list_subs()[z].list_subs()[i].add_subdirectory(title)
                         ##print(title)
-                        path = directory.list_subs()[z].list_subs()[i].list_subs()[-1].root
+                        path = directory.list_subs()[z].list_subs()[i].list_subs()[-1]
                         forum(z, i, path)
                 
-                path = directory.list_subs()[z].list_subs()[i].root
+                path = directory.list_subs()[z].list_subs()[i]
                 forum(z, i, path)
             
             else:
@@ -211,10 +212,10 @@ for z in range(len(directory.list_subs())):
                         title = formatTitle(n.find(class_="node-title").get_text())
                         directory.list_subs()[z].list_subs()[i].add_subdirectory(title)
                         ##print(title)
-                        path = directory.list_subs()[z].list_subs()[i].list_subs()[-1].root
+                        path = directory.list_subs()[z].list_subs()[i].list_subs()[-1]
                         forum(z, i, path)
         else:
             
-            path = directory.list_subs()[z].list_subs()[i].root
+            path = directory.list_subs()[z].list_subs()[i]
             forum(z, i, path)
             
