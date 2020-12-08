@@ -54,10 +54,10 @@ def createForum(link, path, title):
 
             for page in range(1, last_page + 1):
                 newlink = link + "page-" + str(page)
-                #print("                " + newlink)
+                print("                " + newlink)
                 content = BeautifulSoup(requests.get(newlink).text, "html.parser")
                 block = content.find(class_="block-body js-replyNewMessageContainer")
-                ##print(link)
+                #print(link)
                 post = block.find_all("article")
                 
                 f = open(path + "/" + title + ".txt", "a")
@@ -75,7 +75,7 @@ def createForum(link, path, title):
                     f.write(formatPosts(message) + "\n\n")
         else:
                 block = content.find(class_="block-body js-replyNewMessageContainer")
-                #print("                " + link)
+                print("                " + link)
                 post = block.find_all("article")
                 
                 f = open(path + "/" + title + ".txt", "w")
@@ -129,7 +129,7 @@ def forum(z, i, path):
         del bar
         for page in range(1, last_page + 1):
             newlink = link + "page-" +str(page)
-            #print(newlink)
+            print(newlink)
             content = BeautifulSoup(requests.get(newlink).text, "html.parser")
             posts = content.find_all(class_="structItem-title")
             for t in range(len(posts)):
@@ -137,7 +137,7 @@ def forum(z, i, path):
                 title = posts[t].get_text()
                 title = formatTitle("P" + str(page) + "N" + str(t) + " " + title)
                 forum_link = website.url + posts[t].find("a")["href"][1:]
-                #print("        " + forum_link)
+                print("        " + forum_link)
                 createForum(forum_link, path, title)
     except:
         pass
@@ -154,7 +154,9 @@ def randomTime():
 website = Website("https://www.tortoiseforum.org/", "Tortoise Forum")
 directory = Directory("T:/" + website.name + " (" + str(uuid.uuid4())[:8] + ")", "root")
 
-#print("Scraping " + website.name)
+error_file = open(directory.root + "/" + "errors.txt", "w")
+
+print("Scraping " + website.name)
 
 blocks = website.content.find_all(class_="block-container")
 #creates topics
@@ -175,7 +177,7 @@ for z in range(len(directory.list_subs())):
 '''
     #An example of how a subdirectory can be referenced from a subdirectory and display the "root"(path)
     for i in range(len(block.list_subs())):
-        #print(block.list_subs()[i].root)
+        print(block.list_subs()[i].root)
 '''
 #goes through each topic and determines whether it is a forum or another sub
 for z in range(len(directory.list_subs())):
@@ -186,20 +188,27 @@ for z in range(len(directory.list_subs())):
             if checkForum(link) == True:
                 content = BeautifulSoup(requests.get(link).text, "html.parser")
                 blocks = content.find_all(class_="block-container")
-    
+                preserve_link = link
+                
                 for b in blocks:
                     nodes = b.find_all(class_="node-body")
                     for n in nodes:
                         link = website.url + n.find("a")["href"]
                         title = formatTitle(n.find(class_="node-title").get_text())
                         directory.list_subs()[z].list_subs()[i].add_subdirectory(title)
-                        ##print(title)
+                        print(title)
                         path = directory.list_subs()[z].list_subs()[i].list_subs()[-1].root
-                        forum(z, i, path)
-                
-                path = directory.list_subs()[z].list_subs()[i].root
-                forum(z, i, path)
-            
+                        try:        
+                            forum(z, i, path)
+                        except:
+                            pass
+                try:
+                    link = preserve_link
+                    path = directory.list_subs()[z].list_subs()[i].root
+                    forum(z, i, path)
+                except:
+                    pass
+
             else:
                 content = BeautifulSoup(requests.get(link).text, "html.parser")
                 blocks = content.find_all(class_="block-container")
@@ -210,11 +219,14 @@ for z in range(len(directory.list_subs())):
                         link = website.url + n.find("a")["href"]
                         title = formatTitle(n.find(class_="node-title").get_text())
                         directory.list_subs()[z].list_subs()[i].add_subdirectory(title)
-                        ##print(title)
+                        print(title)
                         path = directory.list_subs()[z].list_subs()[i].list_subs()[-1].root
                         forum(z, i, path)
         else:
-            
-            path = directory.list_subs()[z].list_subs()[i].root
-            forum(z, i, path)
-            
+            try:
+                path = directory.list_subs()[z].list_subs()[i].root
+                forum(z, i, path)
+            except:
+                pass
+
+error_file.close()
